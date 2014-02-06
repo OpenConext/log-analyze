@@ -205,7 +205,7 @@ function LaAnalyzeDayInsert($day, $environment, $mysql_link) {
 
 	# create user table after update...
 	if ((! $LA['disable_user_count']) && ($user_table != "")) {
-		$result = mysql_query("CREATE TABLE ".$user_table." (user_day_id INT NOT NULL,user_provider_id INT NOT NULL,user_name VARCHAR(128) DEFAULT NULL,PRIMARY KEY (user_day_id,user_provider_id,user_name)) ENGINE=InnoDB", $mysql_link);
+		$result = mysql_query("CREATE TABLE ".$user_table." (user_day_id INT NOT NULL,user_provider_id INT NOT NULL,user_name VARCHAR(128) DEFAULT NULL,PRIMARY KEY (user_day_id,user_provider_id,user_name), KEY lua".$day_id." (user_provider_id)) ENGINE=InnoDB", $mysql_link);
 		if (! $result) {
 			catchMysqlError("LaAnalyzeDayUpdate (CREATE USER TABLE)", $mysql_link);
 		}
