@@ -41,7 +41,8 @@ if (! checkDateMine($entry_from) || ! checkDateMine($entry_to) ) {
 openLogFile($script_root);
 
 # open database
-openMysqlDb("DB");
+$LA['mysql_link_logins'] = openMysqlDb("DB_logins");
+$LA['mysql_link_stats']  = openMysqlDb("DB_stats");
 
 ############
 ### MAIN ###
@@ -175,7 +176,8 @@ else {
 #############
 
 # close database
-closeMysqlDb();
+closeMysqlDb($LA['mysql_link_logins']);
+closeMysqlDb($LA['mysql_link_stats']);
 
 # close log
 closeLogFile();

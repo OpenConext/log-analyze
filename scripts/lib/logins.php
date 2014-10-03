@@ -4,13 +4,18 @@
 ### LOGINS ###
 ##############
 
+function array_index($array,$i)
+{
+	return $array[$i];
+}
+
 # for test
 function getTotalNumberOfEntries($from, $to) {
     global $LA;
 
 	$count = NULL;
 
-	$result = mysql_query("SELECT count(*) as number FROM ".$LA['table_logins']." WHERE loginstamp BETWEEN '".$from."' AND '".$to."'", $LA['mysql_link']);
+	$result = mysql_query("SELECT count(*) as number FROM {$LA['table_logins']} WHERE loginstamp BETWEEN '{$from}' AND '{$to}'", $LA['mysql_link_logins']);
 	
 	if (mysql_num_rows($result) == 1) {
 		$result_row = mysql_fetch_assoc($result);
@@ -27,7 +32,7 @@ function getRandomEntry($max, $from, $to) {
 	$offset = rand(1,$max-1);
 	$entry = array();
 
-	$result = mysql_query("SELECT loginstamp,userid,spentityid,idpentityid,spentityname,idpentityname FROM ".$LA['table_logins']." WHERE loginstamp BETWEEN '".$from."' AND '".$to."' LIMIT ".$offset.",1", $LA['mysql_link']);
+	$result = mysql_query("SELECT loginstamp,userid,spentityid,idpentityid,spentityname,idpentityname FROM log_logins WHERE loginstamp BETWEEN '{$from}' AND '{$to}' LIMIT {$offset},1", $LA['mysql_link_logins']);
 	
 	if (mysql_num_rows($result) == 1) {
 		$result_row = mysql_fetch_assoc($result);
@@ -62,7 +67,7 @@ function getNumberOfEntriesPerProvider($sp, $idp, $from, $to, $counter) {
 		$selector = "count(DISTINCT(userid))";
 	}
 	
-	$result = mysql_query("SELECT ".$selector." as number FROM ".$LA['table_logins']. " WHERE spentityid = '".$sp."' AND idpentityid = '".$idp."'".$extend, $LA['mysql_link']);
+	$result = mysql_query("SELECT ".$selector." as number FROM ".$LA['table_logins']. " WHERE spentityid = '".$sp."' AND idpentityid = '".$idp."'".$extend, $LA['mysql_link_logins']);
 	
 	if (mysql_num_rows($result) == 1) {
 		$result_row = mysql_fetch_assoc($result);
@@ -77,7 +82,11 @@ function getNumberOfEntriesFromLogins($from, $to) {
 
 	$count = NULL;
 
-	$result = mysql_query("SELECT count(*) as number FROM ".$LA['table_logins']. " WHERE loginstamp BETWEEN '".$from."' AND '".$to."'", $LA['mysql_link']);
+	$result = mysql_query("
+		SELECT count(*) as number
+		FROM {$LA['table_logins']}
+		WHERE loginstamp BETWEEN '{$from}' AND '{$to}'
+	", $LA['mysql_link_logins']);
 	
 	if (mysql_num_rows($result) == 1) {
 		$result_row = mysql_fetch_assoc($result);
@@ -92,7 +101,7 @@ function getTimestampOfEntryFromLogins($from, $to, $offset) {
 
 	$timestamp = NULL;
 
-	$result = mysql_query("SELECT loginstamp FROM ".$LA['table_logins']. " WHERE loginstamp BETWEEN '".$from."' AND '".$to."' LIMIT ".$offset.",1", $LA['mysql_link']);
+	$result = mysql_query("SELECT loginstamp FROM log_logins WHERE loginstamp BETWEEN '{$from}' AND '{$to}' LIMIT ".$offset.",1", $LA['mysql_link_logins']);
 	
 	if (mysql_num_rows($result) == 1) {
 		$result_row = mysql_fetch_assoc($result);
@@ -102,6 +111,28 @@ function getTimestampOfEntryFromLogins($from, $to, $offset) {
 	return $timestamp;
 }
 
+function _getEnvironment($env)
+{
+	switch ($env) {
+		case 'PA':
+		case 'prod':
+		case 'production':
+		case 'prodaccepted':
+			return 'PA';
+		
+		case 'TA':
+		case 'test':
+		case 'testing':
+		case 'testaccepted':
+			return 'TA';
+		
+		case 'U':
+		case 'unknown':
+			return 'U';
+	}
+	throw new Exception("Unknown state/enviroment '$env'");
+}
+
 ####################
 ### CHILD logins ###
 ####################
@@ -109,138 +140,186 @@ function getTimestampOfEntryFromLogins($from, $to, $offset) {
 # - use a $mysql_link parameter
 # - use locking
 
-function getEntriesFromLogins($from, $to, $mysql_link) {
-    global $LA;
+function getEntriesFromLogins($from, $to, $dbh_logins) {
+	global $LA;
+	global $entities;
 
-	$count = 1;
 	$entries = array();
 	$users = array();
 	$seen = array();
-	
-	$result = mysql_query("SELECT loginstamp,userid,spentityid,idpentityid,spentityname,idpentityname FROM ".$LA['table_logins']. " WHERE loginstamp BETWEEN '".$from."' AND '".$to."'", $mysql_link);
-	
-	if ($result) {
-		while ($result_row = mysql_fetch_assoc($result)) {
-			# add entity info: eid, revision & environment
-			global $entities;
-			global $entities_idp_index;
-			global $entities_sp_index;
-			
-			# SP
-			$sp_eid = 0;
-			if (array_key_exists($result_row['spentityid'], $entities_sp_index)) {
-				$sp_eid = $entities_sp_index[$result_row['spentityid']];
-			}
-			$sp_revision = -1;
-			$sp_environment = "";
-			if ($sp_eid != 0) {
-				$first = 1;
-				foreach ($entities[$sp_eid] as $revision => $value) {
-					if ($first) {
-						$sp_revision = $revision;
-						$sp_environment = $value['environment'];
-						$first = 0;
-					}
-					else {
-						if ($value['timestamp'] > $result_row['loginstamp']) {
-							break;
-						}
-						else {
-							$sp_revision = $revision;
-							$sp_environment = $value['environment'];
-						}
-					}
-				}
-			}
-			else {
-				$sp_revision = LaAnalyzeUnknownSPUpdate($result_row['spentityid'], $mysql_link);
-				$sp_environment = "U";
-			}
-			
-			# IDP
-			$idp_eid = 0;
-			if (array_key_exists($result_row['idpentityid'], $entities_idp_index)) {
-				$idp_eid = $entities_idp_index[$result_row['idpentityid']];
-			}
-			$idp_revision = -1;
-			$idp_environment = "";
-			if ($idp_eid != 0) {
-				$first = 1;
-				foreach ($entities[$idp_eid] as $revision => $value) {
-					if ($first) {
-						$idp_revision = $revision;
-						$idp_environment = $value['environment'];
-						$first = 0;
-					}
-					else {
-						if ($value['timestamp'] > $result_row['loginstamp']) {
-							break;
-						}
-						else {
-							$idp_revision = $revision;
-							$idp_environment = $value['environment'];
-						}
-					}
-				}
-			}
-			else {
-				$idp_revision = LaAnalyzeUnknownIDPUpdate($result_row['idpentityid'], $mysql_link);
-				$idp_environment = "U";
-			}
-			
-			# sort per day:sp-eid:idp-eid:sp-revision:idp-revision:sp-environment:idp-environment
-			$dt = new DateTime($result_row['loginstamp']);
-			$timestamp = $dt->format("Y-m-d");
-			
-			$tag = $timestamp.":".$sp_eid.":".$idp_eid.":".$sp_revision.":".$idp_revision.":".$sp_environment.":".$idp_environment;
-			
-			# check entry
-			# obsolete: unknown entries are stored as eid=0 and environment=U
-			#if ($sp_eid == 0 || $idp_eid == 0 || $sp_revision == -1 || $idp_revision == -1 || $sp_environment != $idp_environment) {
-			#	log2file("Entry not accepted: ".$tag. ". Login for SP: ".$result_row['spentityid']." from IDP: ".$result_row['idpentityid']." at time: ".$result_row['loginstamp']);
-			#}
-			
-			# same entry
-			if ( ($entry = array_search($tag, $seen)) !== false) {
-				$entries[$entry]['count'] = $entries[$entry]['count'] + 1;
-			}	
-			# new entry
-			else {
-				$entry = $count;
-				$count++;
-				
-				$seen[$entry] = $tag;
-				
-				$entries[$entry] = array();
-				$entries[$entry]['time'] = $timestamp;
-				$entries[$entry]['sp'] = $result_row['spentityid'];
-				$entries[$entry]['idp'] = $result_row['idpentityid'];
-				$entries[$entry]['sp_name'] = $result_row['spentityname'];
-				$entries[$entry]['idp_name'] = $result_row['idpentityname'];
-				$entries[$entry]['sp_eid'] = $sp_eid;
-				$entries[$entry]['idp_eid'] = $idp_eid;
-				$entries[$entry]['sp_revision'] = $sp_revision;
-				$entries[$entry]['idp_revision'] = $idp_revision;
-				$entries[$entry]['sp_environment'] = $sp_environment;
-				$entries[$entry]['idp_environment'] = $idp_environment;
-				$entries[$entry]['count'] = 1;
-				
-				$users[$entry] = array();
-			}
-			
-			# always add new users
-			$newUser = sha1(trim($result_row['userid'].$LA['anonymous_user_string']));
-			if ((! $LA['disable_user_count']) && (! in_array($newUser, $users[$entry]))) {
-				$users[$entry][] = $newUser;
-			}
 
-		}
+	$result = mysql_query("
+		SELECT
+			UNIX_TIMESTAMP(loginstamp) as 'loginstamp',
+			userid,
+			spentityid,
+			idpentityid,
+			spentityname,
+			idpentityname
+		FROM log_logins
+		WHERE loginstamp BETWEEN '{$from}' AND '{$to}'
+	", $dbh_logins);
+
+	if ($result===false) {
+		catchMysqlError("getEntriesFromLogins", $dbh_logins);
 	}
-	else {
-		catchMysqlError("getEntriesFromLogins", $mysql_link);
+
+	while ($result_row = mysql_fetch_assoc($result))
+	{
+		$loginstamp = new DateTime("@".$result_row['loginstamp']);
+
+		# SP
+
+		# is this sp entityid known in SR at the specified time?
+		$spentity = searchEntity($entities, 'saml20-sp', $result_row['spentityid'], $loginstamp);
+		if ($spentity)
+		{
+			$sp_entityid    = $spentity['entityid'];
+			$sp_environment = _getEnvironment($spentity['state']);
+			$sp_metadata    = $spentity['metadata'];
+			$sp_metahash    = $spentity['metahash'];
+			$sp_datefrom    = $spentity['dates'][0][0];
+			# array_index() because php5.3 doesn't support foo($bla)[1]
+			$sp_dateto      = array_index( end($spentity['dates']), 1); 
+		}
+		else
+		{ # entity unknown in SR
+			$sp_entityid    = $result_row['spentityid'];
+			$sp_environment = _getEnvironment('unknown');
+			$sp_metadata    = array();
+			$sp_metahash    = null;
+			$sp_datefrom    = null;
+			$sp_dateto      = null;
+		}
+
+
+		# IDP
+
+		# is this sp entityid known in SR at the specified time?
+		$idpentity = searchEntity($entities, 'saml20-idp', $result_row['idpentityid'], $loginstamp);
+		if ($idpentity)
+		{
+			$idp_entityid    = $idpentity['entityid'];
+			$idp_environment = _getEnvironment($idpentity['state']);
+			$idp_metadata    = $idpentity['metadata'];
+			$idp_metahash    = $idpentity['metahash'];
+			$idp_datefrom    = $idpentity['dates'][0][0];
+			$idp_dateto      = array_index( end($idpentity['dates']), 1);
+		}
+		else
+		{ # entity unknown in SR
+			$idp_entityid    = $result_row['idpentityid'];
+			$idp_environment = _getEnvironment('unknown');
+			$idp_metadata    = array();
+			$idp_metahash    = null;
+			$idp_datefrom    = null;
+			$idp_dateto      = null;
+		}
+
+		# check if combination of SP and IdP environment is sane
+		# determine environment to use for this entry
+		if ($sp_environment==$idp_environment) {
+			# normal situation (PA,PA) or (TA,TA) or (U,U)
+			$environment = $sp_environment;
+		}
+		else {
+			# either SP or IdP is U, environment is then determined by the other one
+			if     ($sp_environment =='U') $environment = $idp_environment;
+			elseif ($idp_environment=='U') $environment = $sp_environment;
+			else {
+				# ok, weirdness (TA IdP and PA SP, or vice versa)
+				# the only way this can happen is because of flushes
+				# a configuration may have been changed in SR, but still not be active until a flush
+				# For now, report such entries and ignore them for logging purposes
+				log2file("SP and IdP environment mismatch:\n"
+						.print_r($result_row,1)
+						.print_r($loginstamp,1)
+						.print_r($idpentity,1)
+						.print_r($spentity,1)
+				);
+				continue;
+			}
+		}
+
+
+
+		# then record information about this IdP-SP combination and count logins and record users
+
+		# sort per day:sp-eid:idp-eid:sp-revision:idp-revision:sp-environment:idp-environment
+		# note: $loginstamp is a DateTime object, which records its own internal timezone (typically UTC)
+		#       however, here we need the corresponding day in local (ie., Amsterdam) time.
+		#       Therefore, we need to make an explicit conversion
+		$loginstamp->setTimezone(new DateTimeZone($LA['timezone']));
+		$logindate = $loginstamp->format("Y-m-d");
+
+		$tag = "$logindate||"
+				. "$idp_environment|$idp_entityid|$idp_metahash||"
+				. "$sp_environment|$sp_entityid|$sp_metahash";
+
+
+		# check if we have seen this (date,IdP,SP)-combination before
+		if (isset($seen[$tag]))
+		{
+			# yes, seen before; simply count number of logins
+			$n = $seen[$tag];
+			$entries[$n]['count'] = $entries[$n]['count'] + 1;
+		}
+		else
+		{
+			# no, this is a new combination, record relevant info
+
+			$record                    = array();
+			$record['time']            = $logindate;
+			$record['sp_name']         = $result_row['spentityname'];
+			$record['idp_name']        = $result_row['idpentityname'];
+			$record['sp_entityid']     = $sp_entityid;
+			$record['idp_entityid']    = $idp_entityid;
+			$record['sp_datefrom']     = $sp_datefrom;
+			$record['idp_datefrom']    = $idp_datefrom;
+			$record['sp_dateto']       = $sp_dateto;
+			$record['idp_dateto']      = $idp_dateto;
+			$record['sp_environment']  = $sp_environment;
+			$record['idp_environment'] = $idp_environment;
+			$record['environment']     = $environment;
+			$record['sp_metadata']     = $sp_metadata;
+			$record['idp_metadata']    = $idp_metadata;
+			$record['sp_metahash']     = $sp_metahash;
+			$record['idp_metahash']    = $idp_metahash;
+			$record['count']           = 1;
+
+			$entries[]  = $record;
+			$n          = count($entries) - 1;
+			$seen[$tag] = $n;
+			$users[$n]  = array();
+
+			# debug
+			#if ($record['sp_environment']=='U' or $record['idp_environment']=='U') {
+			#	print "Unknown: ";
+			#	print_r($record);
+			#}
+		}
+
+		# always add new users
+		if (!$LA['disable_user_count'])
+		{
+			$newUser = sha1(trim($result_row['userid'] . $LA['anonymous_user_string']));
+			# note: users are stored as array (well, hash) _keys_ rather than values
+			# this is much more efficient than searching through the entire array every time
+			# to check if we have encountered this user before
+			$users[$n][$newUser] = true;
+		}
+
+	}
+
+	# return users as flat arrays rather than hask keys
+	foreach (array_keys($users) as $i)
+	{
+		$users[$i] = array_keys($users[$i]);
 	}
 
 	return array($entries, $users);
 }
+
+
 
 ?>

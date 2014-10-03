@@ -35,6 +35,7 @@ function catchException($exception) {
 # my mysql error catching
 function catchMysqlError($function, $mysql_link) {
 	echoMysqlError($function, mysql_errno($mysql_link), mysql_error($mysql_link));
+	exit(-1);
 }
 
 #########
@@ -45,6 +46,10 @@ function openLogFile($dir) {
     global $LA;
 
     $LA['log_handler'] = fopen($dir.$LA['log_file'], 'a');
+    if (!$LA['log_handler']) {
+        print "Error opening log file {$dir}{$LA['log_file']}\n";
+        exit;
+    }
 }
 
 function closeLogFile() {
@@ -57,17 +62,20 @@ function log2file($message) {
     global $LA;
 
     $out = strftime("%A %d-%b-%y %T %Z", time()).": ".$message."\n";
-    fwrite($LA['log_handler'], $out, strlen($out));
 
+    if ( array_key_exists('log_handler',$LA) && $LA['log_handler'] ) {
+        fwrite($LA['log_handler'], $out, strlen($out));
+    }
+    print "$out";
 }
 
 # error logging
 function echoProgramError($file, $line, $errorNr, $errorTxt) {
-	log2file( "[".$file.":".$line."] Program Error: ".$errorNr.", ".$errorTxt."\n" );
+	log2file( "[".$file.":".$line."] Program Error: ".$errorNr.", ".$errorTxt );
 }
 
 function echoProgramException($file, $line, $errorNr, $errorTxt) {
-	log2file( "[".$file.":".$line."] Program Exception: ".$errorNr.", ".$errorTxt."\n" );
+	log2file( "[".$file.":".$line."] Program Exception: ".$errorNr.", ".$errorTxt );
 }
 
 # mysql logging

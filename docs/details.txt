@@ -93,7 +93,7 @@ The first line tells you (translated in english):
 On '2013-11-26' in the 'Production' environment the service 'iAvans portal | Avans' was accessed '43414' times by '17913' unique users from the identity provider 'Avans Hogeschool'.
 
 
-log_analyze_user__1 example:
+log_analyze_days__1 example:
 +-------------+------------------+----------------------------------+
 | user_day_id | user_provider_id | user_name                        |
 +-------------+------------------+----------------------------------+
@@ -106,7 +106,7 @@ log_analyze_user__1 example:
 
 This is part of the unique user table for day_id 1. The unique users are stored per provider. To get the unique users per day you need to do a distinct count of the users. Like:
 
-SELECT count(distinct(user_name)) FROM log_analyze_user__1
+SELECT count(distinct(user_name)) FROM log_analyze_days__1
 
 To get the disctinct user count over multiple days you can use the stored procedure: getUniqueUserCount($FROM, $TO, $ENVIRONMENT).
 

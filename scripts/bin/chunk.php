@@ -1,15 +1,28 @@
 #!/usr/bin/php
 <?php
 
+function timestamp2datestr($timestamp)
+{
+	global $LA;
+
+	# convert timestamp to same timezone as used in MySQL connections
+	$dt = DateTime::createFromFormat('U',$timestamp);
+	$dt->setTimezone(new DateTimeZone($LA['timezone']));
+	return $dt->format('Y-m-d H:i:s');
+}
+
+date_default_timezone_set("UTC");
+
+
 #############
 ### INPUT ###
 #############
 
 # read args
-parse_str(implode('&', array_slice($argv, 1)), $ARGS);
+$ARGS = getopt('',array('from:','to:'));
 
 if (! array_key_exists("from", $ARGS) || ! array_key_exists("to", $ARGS)) {
-	echo "USAGE $argv[0] from=\"YYYY-MM-DD HH:MM:SS\" to=\"YYYY-MM-DD HH:MM:SS\" \n";
+	echo "USAGE $argv[0] --from=\"YYYY-MM-DD HH:MM:SS\" --to=\"YYYY-MM-DD HH:MM:SS\" \n";
 	exit;
 }
 
@@ -29,19 +42,22 @@ require $script_root."/lib/libs.php";
 global $LA;
 
 # ARGS
-$entry_from = $ARGS['from'];
-$entry_to = $ARGS['to'];
-if (! checkDateTime($entry_from) || ! checkDateTime($entry_to) ) {
+$entry_from = strtotime($ARGS['from']);
+$entry_to   = strtotime($ARGS['to']  );
+if ($entry_from===false || $entry_to===false ) {
 	echo "Arguments are not valid DATETIME. Format: YYYY-MM-DD HH:MM:SS\n";
 	print_r($ARGS);
 	exit;	
 }
+$entry_from = timestamp2datestr($entry_from);
+$entry_to   = timestamp2datestr($entry_to  );
 
 # open log
 openLogFile($script_root);
 
 # open database
-openMysqlDb("DB");
+$LA['mysql_link_logins'] = openMysqlDb("DB_logins");
+$LA['mysql_link_stats']  = openMysqlDb("DB_stats");
 
 ############
 ### MAIN ###
@@ -58,6 +74,10 @@ if (isset($count)) {
 		# calculate new chunk size based on max chunk count
 		$chunk_count = $LA['max_chunk_count'] * $LA['max_processes'];
 		$chunk_size = ceil($count/$chunk_count);
+	}
+	if ($chunk_count<1) {
+		print "Incorrect interval\n";
+		exit(1);
 	}
 	
 	# calculate chunk size in seconds
@@ -138,13 +158,54 @@ if (isset($count)) {
 			}
 		}
 
-		# Save the array
+		# now lets see if everything went ok
+		mysql_query("START TRANSACTION", $LA['mysql_link_stats']);
+		$success = true;
+
+		# save the chunks
 		$status = LaChunkSave($chunkArray);
-		
-		echo "... done\n";
 		if ($status != 1) {
-			echo "WARNING: not all chunks are saved!\n";
+			echo "WARNING: not all chunks are saved, reverting!\n";
+			$success = false;
 		}
+
+		# check if there are overlaps
+		$result = mysql_query('
+			SELECT 
+			    a.chunk_id as ida, a.chunk_from as a1, a.chunk_to as a2,
+			    b.chunk_id as idb, b.chunk_from as b1, b.chunk_to as b2
+			FROM log_analyze_chunk as a, log_analyze_chunk as b
+			WHERE (
+			     a.chunk_from BETWEEN b.chunk_from AND b.chunk_to
+			  OR a.chunk_to   BETWEEN b.chunk_from AND b.chunk_to
+			  OR b.chunk_from BETWEEN a.chunk_from AND a.chunk_to
+			  OR b.chunk_to   BETWEEN a.chunk_from AND a.chunk_to
+			)
+			AND a.chunk_id<b.chunk_id
+		', $LA['mysql_link_stats']); 
+		if (mysql_num_rows($result)>0)
+		{
+			print "ERROR: chunks are overlapping, reverting!\n";
+			while ($row = mysql_fetch_assoc($result))
+			{
+				print " - overlap between {$row['ida']} ({$row['a1']} to {$row['a2']}) "
+				     ."and {$row['idb']} ({$row['b1']} to {$row['b2']})\n";
+
+			}
+			$success = false;
+		}
+
+		if ($success)
+		{
+			mysql_query("COMMIT", $LA['mysql_link_stats']);
+			echo "... done\n";
+		}
+		else
+		{
+			mysql_query("ROLLBACK", $LA['mysql_link_stats']);
+			echo "...chunking failed\n";
+		}
+
 	}
 	else {
 		echo "Chunk size too big: ".$chunk_size."\n";
@@ -161,7 +222,8 @@ else {
 #############
 
 # close database
-closeMysqlDb();
+closeMysqlDb($LA['mysql_link_logins']);
+closeMysqlDb($LA['mysql_link_stats']);
 
 # close log
 closeLogFile();
