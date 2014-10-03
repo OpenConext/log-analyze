@@ -208,3 +208,31 @@ CREATE PROCEDURE getUniqueUserCount (IN fromDay DATE, IN toDay DATE, IN environm
 		DEALLOCATE PREPARE stmt;
     END //
 DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE `getUniqueUserCountPerSP`(IN fromDay DATE, IN toDay DATE, IN environment VARCHAR(8), IN sp_id INT)
+BEGIN
+		SET group_concat_max_len = 1024 * 1024 * 1024;
+		
+		SET @fromDay = fromDay; 
+		SET @toDay = toDay; 
+		SET @environment = environment; 
+		SET @sp_id = sp_id;
+		SET @a = (select group_concat('(select user_name from stats.log_analyze_user__' , day_id, ' LEFT JOIN stats.log_analyze_provider p ON stats.log_analyze_user__' , day_id,'.user_provider_id= p.provider_id LEFT JOIN stats.log_analyze_sp sp ON p.provider_sp_id = sp.sp_id WHERE sp.sp_id = ' , @sp_id,')' SEPARATOR ' UNION ') from log_analyze_day where (day_day BETWEEN @fromDay AND @toDay) AND (day_environment = @environment) );
+		SET @x := CONCAT('select count(distinct(user_name)) as user_count from ( ', @a, ' ) e');
+		Prepare stmt FROM @x;
+		Execute stmt;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE `getUniqueUserCountPerIdP`(IN fromDay DATE, IN toDay DATE, IN environment VARCHAR(8), IN idp_id INT)
+BEGIN
+		SET group_concat_max_len = 1024 * 1024 * 1024;
+		SET @a = (select group_concat('(select user_name from stats.log_analyze_user__' , day_id, ' LEFT JOIN stats.log_analyze_provider p ON stats.log_analyze_user__' , day_id,'.user_provider_id= p.provider_id LEFT JOIN stats.log_analyze_idp idp ON p.provider_idp_id = idp.idp_id WHERE idp.idp_id = ' , sp_id,')' SEPARATOR ' UNION ') 
+		from log_analyze_day where (day_day BETWEEN fromDay AND toDay) AND (day_environment = environment) );
+		SET @x := CONCAT('select count(distinct(user_name)) as user_count from ( ', @a, ' ) e');
+		Prepare stmt FROM @x;
+		Execute stmt;
+END $$
+DELIMITER ;
