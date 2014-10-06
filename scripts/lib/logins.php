@@ -231,11 +231,10 @@ function getEntriesFromLogins($from, $to, $dbh_logins) {
 				# the only way this can happen is because of flushes
 				# a configuration may have been changed in SR, but still not be active until a flush
 				# For now, report such entries and ignore them for logging purposes
-				log2file("SP and IdP environment mismatch:\n"
+				$dt = $loginstamp->format(DateTime::ISO8601);
+				log2file("SP and IdP environment mismatch on {$dt}: "
+						."IdP={$idp_environment}, SP={$sp_environment}\n"
 						.print_r($result_row,1)
-						.print_r($loginstamp,1)
-						.print_r($idpentity,1)
-						.print_r($spentity,1)
 				);
 				continue;
 			}
