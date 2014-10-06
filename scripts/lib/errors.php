@@ -27,7 +27,6 @@ function catchError($errno, $errstr, $errfile, $errline) {
     return true;
 }
 
-# TODO: what about exceptions?
 function catchException($exception) {
 	echoProgramException($exception->getFile(), $exception->getLine(), $exception->getCode(), $exception->getMessage());
 }
