@@ -229,6 +229,7 @@ function agPeriodTotals($periods)
 			continue;
 		}
 
+		# total number of logins and users for this period
 		$selects = array();
 		$tot_logins = 0;
 		while ($row = mysql_fetch_assoc($result)) 
@@ -314,12 +315,13 @@ function agPeriodTotals($periods)
 		# total logins per period per sp
 		# fetched by summing over all idps for this (period,sp) in log_analyze_periodstats
 		$q = "
-			INSERT INTO log_analyze_periodstats
-				  (periodstats_period_id, periodstats_idp_id, periodstats_sp_id, periodstats_logins)
-			SELECT periodstats_period_id, NULL,               periodstats_sp_id, SUM(periodstats_logins)
+			INSERT INTO log_analyze_periodsp
+				  (periodsp_period_id,    periodsp_sp_id,    periodsp_logins)
+			SELECT periodstats_period_id, periodstats_sp_id, SUM(periodstats_logins)
 				FROM log_analyze_periodstats
-				WHERE periodstats_period_id={$period} AND periodstats_sp_id IS NOT NULL
-				GROUP BY periodstats_sp_id;
+				WHERE periodstats_period_id={$period}
+				GROUP BY periodstats_sp_id
+			ON DUPLICATE KEY UPDATE periodsp_logins=VALUES(periodsp_logins);
 		";
 		$result = mysql_query($q,$LA['mysql_link_stats']);
 		if (!$result) {
@@ -330,12 +332,13 @@ function agPeriodTotals($periods)
 		# total logins per period per idp
 		# fetched by summing over all sps for this (period,idp) in log_analyze_periodstats
 		$q = "
-			INSERT INTO log_analyze_periodstats
-				  (periodstats_period_id, periodstats_idp_id, periodstats_sp_id, periodstats_logins)
-			SELECT periodstats_period_id, periodstats_idp_id, NULL,              SUM(periodstats_logins)
+			INSERT INTO log_analyze_periodidp
+				  (periodidp_period_id,   periodidp_idp_id,   periodidp_logins)
+			SELECT periodstats_period_id, periodstats_idp_id, SUM(periodstats_logins) as tot
 				FROM log_analyze_periodstats
-				WHERE periodstats_period_id={$period} AND periodstats_idp_id IS NOT NULL
-				GROUP BY periodstats_idp_id;
+				WHERE periodstats_period_id={$period}
+				GROUP BY periodstats_idp_id
+			ON DUPLICATE KEY UPDATE periodidp_logins=VALUES(periodidp_logins);
 		";
 		$result = mysql_query($q,$LA['mysql_link_stats']);
 		if (!$result) {
@@ -346,13 +349,14 @@ function agPeriodTotals($periods)
 		# total users per period per sp
 		# fetched by counting unqiue users in log_analyze_periods__% for a fixed (period,sp)
 		$q = "
-			UPDATE log_analyze_periodstats as ps
-			SET ps.periodstats_users=(
+			UPDATE log_analyze_periodsp as ps
+			SET ps.periodsp_users=(
 				SELECT COUNT(DISTINCT s.name) AS cnt
 					FROM log_analyze_periods__{$period} AS s
 					LEFT JOIN log_analyze_provider AS p ON s.provider_id=p.provider_id
-				WHERE p.provider_sp_id=ps.periodstats_sp_id)
-			WHERE ps.periodstats_period_id={$period} AND ps.periodstats_idp_id IS NULL;
+				WHERE p.provider_sp_id=ps.periodsp_sp_id)
+			WHERE ps.periodsp_period_id={$period}
+			;
 		";
 		$result = mysql_query($q,$LA['mysql_link_stats']);
 		if (!$result) {
@@ -363,13 +367,14 @@ function agPeriodTotals($periods)
 		# total users per period per idp
 		# fetched by counting unqiue users in log_analyze_periods__% for a fixed (period,idp)
 		$q = "
-			UPDATE log_analyze_periodstats as ps
-			SET ps.periodstats_users=(
+			UPDATE log_analyze_periodidp as ps
+			SET ps.periodidp_users=(
 				SELECT COUNT(DISTINCT s.name) AS cnt
 					FROM log_analyze_periods__{$period} AS s
 					LEFT JOIN log_analyze_provider AS p ON s.provider_id=p.provider_id
-				WHERE p.provider_idp_id=ps.periodstats_idp_id)
-			WHERE ps.periodstats_period_id={$period} AND ps.periodstats_sp_id IS NULL;
+				WHERE p.provider_idp_id=ps.periodidp_idp_id)
+			WHERE ps.periodidp_period_id={$period}
+			;
 		";
 		$result = mysql_query($q,$LA['mysql_link_stats']);
 		if (!$result) {

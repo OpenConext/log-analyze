@@ -181,8 +181,8 @@ DELIMITER ;
 
 CREATE TABLE log_analyze_periodstats (
 	`periodstats_period_id` int(10) unsigned NOT NULL,
-	`periodstats_idp_id`    int(5) NULL DEFAULT NULL,
-	`periodstats_sp_id`     int(5) NULL DEFAULT NULL,
+	`periodstats_idp_id`    int(5) NOT NULL DEFAULT NULL,
+	`periodstats_sp_id`     int(5) NOT NULL DEFAULT NULL,
 	`periodstats_logins`    int(7) unsigned DEFAULT NULL,
 	`periodstats_users`     int(5) unsigned DEFAULT NULL,
 	`periodstats_created`   timestamp NULL DEFAULT NULL,
@@ -199,6 +199,50 @@ BEFORE INSERT ON log_analyze_periodstats
 FOR EACH ROW BEGIN
 	IF ISNULL(NEW.periodstats_created)
 		THEN SET NEW.periodstats_created = NOW();
+	END IF;
+END;;
+DELIMITER ;
+
+CREATE TABLE log_analyze_periodidp (
+	`periodidp_period_id` int(10) unsigned NOT NULL,
+	`periodidp_idp_id`    int(5) NULL DEFAULT NULL,
+	`periodidp_logins`    int(7) unsigned DEFAULT NULL,
+	`periodidp_users`     int(5) unsigned DEFAULT NULL,
+	`periodidp_created`   timestamp NULL DEFAULT NULL,
+	`periodidp_updated`   timestamp DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP ,
+	PRIMARY KEY (`periodidp_period_id`,`periodidp_idp_id`),
+	FOREIGN KEY (`periodidp_period_id`) REFERENCES `log_analyze_period` (`period_id`) ON DELETE CASCADE,
+	FOREIGN KEY (`periodidp_idp_id`)    REFERENCES `log_analyze_idp`    (`idp_id`)     ON DELETE CASCADE
+) CHARACTER SET 'utf8';
+/* trigger to automatically update %_created (necessary for MySQL<5.6) */
+DELIMITER ;;
+CREATE trigger log_analyze_periodidp__trg_create
+BEFORE INSERT ON log_analyze_periodidp
+FOR EACH ROW BEGIN
+	IF ISNULL(NEW.periodidp_created)
+	THEN SET NEW.periodidp_created = NOW();
+	END IF;
+END;;
+DELIMITER ;
+
+CREATE TABLE log_analyze_periodsp (
+	`periodsp_period_id` int(10) unsigned NOT NULL,
+	`periodsp_sp_id`     int(5) NULL DEFAULT NULL,
+	`periodsp_logins`    int(7) unsigned DEFAULT NULL,
+	`periodsp_users`     int(5) unsigned DEFAULT NULL,
+	`periodsp_created`   timestamp NULL DEFAULT NULL,
+	`periodsp_updated`   timestamp DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`periodsp_period_id`,`periodsp_sp_id`),
+	FOREIGN KEY (`periodsp_period_id`) REFERENCES `log_analyze_period` (`period_id`) ON DELETE CASCADE,
+	FOREIGN KEY (`periodsp_sp_id`)     REFERENCES `log_analyze_sp`     (`sp_id`)     ON DELETE CASCADE
+) CHARACTER SET 'utf8';
+/* trigger to automatically update %_created (necessary for MySQL<5.6) */
+DELIMITER ;;
+CREATE trigger log_analyze_periodsp__trg_create
+BEFORE INSERT ON log_analyze_periodsp
+FOR EACH ROW BEGIN
+	IF ISNULL(NEW.periodsp_created)
+		THEN SET NEW.periodsp_created = NOW();
 	END IF;
 END;;
 DELIMITER ;
