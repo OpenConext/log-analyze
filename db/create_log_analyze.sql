@@ -181,8 +181,8 @@ DELIMITER ;
 
 CREATE TABLE log_analyze_periodstats (
 	`periodstats_period_id` int(10) unsigned NOT NULL,
-	`periodstats_idp_id`    int(5) NOT NULL DEFAULT NULL,
-	`periodstats_sp_id`     int(5) NOT NULL DEFAULT NULL,
+	`periodstats_idp_id`    int(5) NOT NULL,
+	`periodstats_sp_id`     int(5) NOT NULL,
 	`periodstats_logins`    int(7) unsigned DEFAULT NULL,
 	`periodstats_users`     int(5) unsigned DEFAULT NULL,
 	`periodstats_created`   timestamp NULL DEFAULT NULL,
