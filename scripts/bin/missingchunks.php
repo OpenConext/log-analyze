@@ -229,6 +229,8 @@ mysql_close($dbh);
 
 
 $dbh = openMysqlDb("DB_stats");
+$LA['mysql_link_stats'] = $dbh;
+checkStatsDBVersion();
 if ( mysql_query("SET time_zone='+0:00';",$dbh) === false )
 {
 	catchMysqlError("failed to set time zone", $dbh);

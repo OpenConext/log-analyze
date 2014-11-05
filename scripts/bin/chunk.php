@@ -59,6 +59,9 @@ openLogFile($script_root);
 $LA['mysql_link_logins'] = openMysqlDb("DB_logins");
 $LA['mysql_link_stats']  = openMysqlDb("DB_stats");
 
+# check databse format
+checkStatsDBVersion($LA['mysql_link_stats']);
+
 ############
 ### MAIN ###
 ############

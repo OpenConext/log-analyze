@@ -1,5 +1,14 @@
 SET storage_engine=InnoDB;
 
+# META
+
+CREATE TABLE log_analyze__meta (
+	meta_version INT NOT NULL,
+	meta_created TIMESTAMP DEFAULT NOW(),
+	PRIMARY KEY (meta_version)
+);
+INSERT INTO log_analyze__meta (meta_version) VALUES (1);
+
 # CHUNK
 
 CREATE TABLE log_analyze_chunk (

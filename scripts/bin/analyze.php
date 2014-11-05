@@ -183,19 +183,25 @@ function runChild()
 ### MAIN ###
 ############
 
+# check db version
+echo "Opening DB...";
+$LA['mysql_link_stats'] = openMysqlDb("DB_stats");
+checkStatsDBVersion($LA['mysql_link_stats']);
+echo "\n";
+
+# get number of chunks from DB
+echo "Retrieving chunks to process...";
+$numberOfChunks = LaChunkNewCount();
+fixIdPSPTables();
+closeMysqlDb($LA['mysql_link_stats']);
+echo "\n";
+
+
 # get entity metadata from SR
 echo "Fetching entity descriptions and metadata...";
 $LA['mysql_link_sr'] = openMysqlDb("DB_sr");
 $entities = getAllEntities();
 closeMysqlDb($LA['mysql_link_sr']);
-echo "\n";
-
-# get number of chunks from DB
-echo "Retrieving chunks to process...";
-$LA['mysql_link_stats'] = openMysqlDb("DB_stats");
-$numberOfChunks = LaChunkNewCount();
-fixIdPSPTables();
-closeMysqlDb($LA['mysql_link_stats']);
 echo "\n";
 
 # check for a max

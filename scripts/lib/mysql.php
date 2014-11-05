@@ -60,4 +60,24 @@ function checkDateMine($date) {
     }
 }
 
+function checkStatsDBVersion()
+{
+	global $LA;
+
+	$VERSION = $LA['DB_VERSION'];
+	$dbh     = $LA['mysql_link_stats'];
+
+	$q = 'SELECT MAX(meta_version) FROM log_analyze__meta';
+	$result = mysql_query($q,$dbh);
+	if (!$result) {
+		throw new Exception("Query for database version failed (maybe you need to update the database?)");
+	}
+	$version = mysql_fetch_array($result);
+	$version = $version[0];
+	if ($version==$VERSION) return true;
+
+	throw new Exception("Database version mismatch: got $version, expected $VERSION (maybe you need to update the database?)");
+
+}
+
 ?>
