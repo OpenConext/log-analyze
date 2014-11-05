@@ -390,7 +390,11 @@ function agPeriodTotals($periods)
 function agCalcDayTotals($day_id)
 {
 	global $LA;
+	$dbh = $LA['mysql_link_stats'];
 
+	mysql_query("START TRANSACTION", $dbh);
+
+	# totals for this day
 	$q = "
 		update log_analyze_day
 		set day_users = (
@@ -398,11 +402,88 @@ function agCalcDayTotals($day_id)
 		)
 		where day_id={$day_id};
 	";
-	$result = mysql_query($q,$LA['mysql_link_stats']);
+	$result = mysql_query($q,$dbh);
 	if (!$result) {
-		catchMysqlError("agCalcDayTotals($day_di)", $LA['mysql_link_stats']);
+		catchMysqlError("agCalcDayTotals($day_id)", $dbh);
 		return;
 	}
+
+	######################################################
+	#### IdPs ############################################
+	######################################################
+	# save logins per idp for this day
+	$q = "
+		INSERT INTO log_analyze_dayidp
+			  (dayidp_day_id, dayidp_idp_id,   dayidp_logins)
+		SELECT stats_day_id,  provider_idp_id, SUM(stats_logins) as tot
+			FROM      log_analyze_stats    AS s
+			LEFT JOIN log_analyze_provider AS p ON p.provider_id=s.stats_provider_id
+			WHERE s.stats_day_id={$day_id}
+			GROUP BY p.provider_idp_id
+		ON DUPLICATE KEY UPDATE dayidp_logins=VALUES(dayidp_logins)
+	";
+	$result = mysql_query($q,$LA['mysql_link_stats']);
+	if (!$result) {
+		catchMysqlError("agCalcDayTotals: error while updating dayidp for day {$day_id}, query was: $q", $LA['mysql_link_stats']);
+		return;
+	}
+
+	# save users per idp for this day
+	$q = "
+		UPDATE log_analyze_dayidp as di
+		SET di.dayidp_users=(
+			SELECT COUNT(DISTINCT u.user_name) AS cnt
+				FROM      log_analyze_days__{$day_id} AS u
+				LEFT JOIN log_analyze_provider        AS p ON u.user_provider_id=p.provider_id
+			WHERE p.provider_idp_id=di.dayidp_idp_id
+		)
+		WHERE di.dayidp_day_id={$day_id}
+	";
+	$result = mysql_query($q,$LA['mysql_link_stats']);
+	if (!$result) {
+		catchMysqlError("agCalcDayTotals: error while updating dayidp for day {$day_id}, query was: $q", $LA['mysql_link_stats']);
+		return;
+	}
+
+	######################################################
+	#### SPs #############################################
+	######################################################
+	# save logins per sp for this day
+	$q = "
+		INSERT INTO log_analyze_daysp
+			  (daysp_day_id, daysp_sp_id,    daysp_logins)
+		SELECT stats_day_id, provider_sp_id, SUM(stats_logins) as tot
+			FROM      log_analyze_stats    AS s
+			LEFT JOIN log_analyze_provider AS p ON p.provider_id=s.stats_provider_id
+			WHERE s.stats_day_id={$day_id}
+			GROUP BY p.provider_sp_id
+		ON DUPLICATE KEY UPDATE daysp_logins=VALUES(daysp_logins)
+	";
+	$result = mysql_query($q,$LA['mysql_link_stats']);
+	if (!$result) {
+		catchMysqlError("agCalcDayTotals: error while updating daysp for day {$day_id}, query was: $q", $LA['mysql_link_stats']);
+		return;
+	}
+
+	# save users per sp for this day
+	$q = "
+		UPDATE log_analyze_daysp as di
+		SET di.daysp_users=(
+			SELECT COUNT(DISTINCT u.user_name) AS cnt
+				FROM      log_analyze_days__{$day_id} AS u
+				LEFT JOIN log_analyze_provider        AS p ON u.user_provider_id=p.provider_id
+			WHERE p.provider_sp_id=di.daysp_sp_id
+		)
+		WHERE di.daysp_day_id={$day_id}
+	";
+	$result = mysql_query($q,$LA['mysql_link_stats']);
+	if (!$result) {
+		catchMysqlError("agCalcDayTotals: error while updating daysp for day {$day_id}, query was: $q", $LA['mysql_link_stats']);
+		return;
+	}
+
+
+	mysql_query("COMMIT", $LA['mysql_link_stats']);
 }
 
 

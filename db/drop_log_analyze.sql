@@ -33,6 +33,8 @@ DROP TABLE IF EXISTS log_analyze_stats;
 DROP TABLE IF EXISTS log_analyze_provider;
 DROP TABLE IF EXISTS log_analyze_periodidp;
 DROP TABLE IF EXISTS log_analyze_periodsp;
+DROP TABLE IF EXISTS log_analyze_dayidp;
+DROP TABLE IF EXISTS log_analyze_daysp;
 DROP TABLE IF EXISTS log_analyze_idp;
 DROP TABLE IF EXISTS log_analyze_sp;
 DROP TABLE IF EXISTS log_analyze_day;

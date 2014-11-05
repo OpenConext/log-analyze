@@ -247,6 +247,50 @@ FOR EACH ROW BEGIN
 END;;
 DELIMITER ;
 
+CREATE TABLE log_analyze_dayidp (
+	`dayidp_day_id`    int(10) unsigned NOT NULL,
+	`dayidp_idp_id`    int(5) NULL DEFAULT NULL,
+	`dayidp_logins`    int(7) unsigned DEFAULT NULL,
+	`dayidp_users`     int(5) unsigned DEFAULT NULL,
+	`dayidp_created`   timestamp NULL DEFAULT NULL,
+	`dayidp_updated`   timestamp DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`dayidp_day_id`,`dayidp_idp_id`),
+	FOREIGN KEY (`dayidp_day_id`) REFERENCES `log_analyze_day` (`day_id`) ON DELETE CASCADE,
+	FOREIGN KEY (`dayidp_idp_id`) REFERENCES `log_analyze_idp` (`idp_id`) ON DELETE CASCADE
+) CHARACTER SET 'utf8';
+/* trigger to automatically update %_created (necessary for MySQL<5.6) */
+DELIMITER ;;
+CREATE trigger log_analyze_dayidp__trg_create
+BEFORE INSERT ON log_analyze_dayidp
+FOR EACH ROW BEGIN
+	IF ISNULL(NEW.dayidp_created)
+	THEN SET NEW.dayidp_created = NOW();
+	END IF;
+END;;
+DELIMITER ;
+
+CREATE TABLE log_analyze_daysp (
+	`daysp_day_id`    int(10) unsigned NOT NULL,
+	`daysp_sp_id`     int(5) NULL DEFAULT NULL,
+	`daysp_logins`    int(7) unsigned DEFAULT NULL,
+	`daysp_users`     int(5) unsigned DEFAULT NULL,
+	`daysp_created`   timestamp NULL DEFAULT NULL,
+	`daysp_updated`   timestamp DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP ,
+	PRIMARY KEY (`daysp_day_id`,`daysp_sp_id`),
+	FOREIGN KEY (`daysp_day_id`) REFERENCES `log_analyze_day` (`day_id`) ON DELETE CASCADE,
+	FOREIGN KEY (`daysp_sp_id`)  REFERENCES `log_analyze_sp`  (`sp_id`)  ON DELETE CASCADE
+) CHARACTER SET 'utf8';
+/* trigger to automatically update %_created (necessary for MySQL<5.6) */
+DELIMITER ;;
+CREATE trigger log_analyze_daysp__trg_create
+BEFORE INSERT ON log_analyze_daysp
+FOR EACH ROW BEGIN
+	IF ISNULL(NEW.daysp_created)
+	THEN SET NEW.daysp_created = NOW();
+	END IF;
+END;;
+DELIMITER ;
+
 
 /* creating stored procedure to get unique user count over multiple days */
 
