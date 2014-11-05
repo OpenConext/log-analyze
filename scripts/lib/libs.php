@@ -8,5 +8,6 @@ require "mysql.php";
 require "la.php";
 require "logins.php";
 require "entities.php";
+require "aggregate.php";
 
 ?>
