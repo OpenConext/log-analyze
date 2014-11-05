@@ -66,8 +66,8 @@ CREATE TABLE log_analyze_sp (
 	sp_entityid    VARCHAR(4096) DEFAULT NULL,
 	sp_environment CHAR(2) DEFAULT NULL,
 	sp_meta        CHAR(64) DEFAULT NULL,
-	sp_datefrom    DATETIME NULL,
-	sp_dateto      DATETIME NULL,
+	sp_datefrom    TIMESTAMP NULL,
+	sp_dateto      TIMESTAMP NULL,
 	PRIMARY KEY (sp_id),
 	UNIQUE  KEY entity_index (sp_entityid(128),sp_environment,sp_meta)
 ) CHARACTER SET 'utf8';
@@ -91,8 +91,8 @@ CREATE TABLE log_analyze_idp (
 	idp_entityid    VARCHAR(4096) DEFAULT NULL,
 	idp_environment CHAR(2) DEFAULT NULL,
 	idp_meta        CHAR(64) DEFAULT NULL,
-	idp_datefrom    DATETIME NULL,
-	idp_dateto      DATETIME NULL,
+	idp_datefrom    TIMESTAMP NULL,
+	idp_dateto      TIMESTAMP NULL,
 	PRIMARY KEY (idp_id),
 	UNIQUE  KEY entity_index (idp_entityid(128),idp_environment,idp_meta)
 ) CHARACTER SET 'utf8';
