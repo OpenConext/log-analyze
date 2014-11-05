@@ -39,7 +39,7 @@ DELIMITER ;
 # STATS
 
 CREATE TABLE log_analyze_day (
-	day_id INT NOT NULL AUTO_INCREMENT,
+	day_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 	day_day DATE DEFAULT NULL,
 	day_environment CHAR(2) NOT NULL,
 	day_logins INT DEFAULT 0,
@@ -125,7 +125,7 @@ CREATE TABLE log_analyze_provider (
 * use a clustered index for better performance
 */
 CREATE TABLE log_analyze_stats (
-	stats_day_id INT NOT NULL,
+	stats_day_id INT UNSIGNED NOT NULL,
 	stats_provider_id INT NOT NULL,
 	stats_logins INT DEFAULT NULL,
 	stats_users INT DEFAULT NULL,

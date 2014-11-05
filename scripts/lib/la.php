@@ -229,7 +229,7 @@ function LaAnalyzeDayInsert($day, $environment, $mysql_link) {
 	if ((! $LA['disable_user_count']) && ($user_table != "")) {
 		$result = mysql_query("
 			CREATE TABLE {$user_table} (
-				user_day_id INT NOT NULL,
+				user_day_id INT UNSIGNED NOT NULL,
 				user_provider_id INT NOT NULL,
 				user_name VARCHAR(128) DEFAULT NULL,
 				PRIMARY KEY (user_day_id,user_provider_id,user_name),
