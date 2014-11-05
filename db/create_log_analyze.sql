@@ -17,7 +17,7 @@ CREATE TABLE log_analyze_chunk (
 	chunk_to TIMESTAMP NULL DEFAULT NULL,
 	chunk_status VARCHAR(128) NOT NULL DEFAULT 'new',
 	chunk_created TIMESTAMP NULL DEFAULT NULL,
-	chunk_updated TIMESTAMP DEFAULT NOW() ON UPDATE NOW(),
+	chunk_updated TIMESTAMP DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP,
 	chunk_in INT DEFAULT NULL,
 	chunk_out INT DEFAULT NULL,
 	PRIMARY KEY (chunk_id),
@@ -45,7 +45,7 @@ CREATE TABLE log_analyze_day (
 	day_logins INT DEFAULT 0,
 	day_users INT DEFAULT 0,
 	day_created TIMESTAMP NULL DEFAULT NULL,
-	day_updated TIMESTAMP DEFAULT NOW() ON UPDATE NOW(),
+	day_updated TIMESTAMP DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP,
 	PRIMARY KEY (day_id),
 	UNIQUE  KEY day_index (day_day,day_environment)
 ) CHARACTER SET 'utf8';
@@ -161,7 +161,7 @@ CREATE TABLE `log_analyze_period` (
 	`period_logins`      int(10) unsigned DEFAULT NULL,
 	`period_users`       int(10) unsigned DEFAULT NULL,
 	`period_created`     timestamp NULL DEFAULT NULL,
-	`period_updated`     timestamp DEFAULT NOW() ON UPDATE NOW(),
+	`period_updated`     timestamp DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP ,
 	PRIMARY KEY (`period_id`),
 	UNIQUE KEY (`period_period`,`period_year`,`period_environment`,`period_type`),
 	KEY (`period_period`,`period_year`),

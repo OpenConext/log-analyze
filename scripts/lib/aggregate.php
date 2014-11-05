@@ -41,7 +41,7 @@ function agReadChunkInfo($file)
 	$fh = fopen($file,'r');
 	if (!$fh) {
 		log2file("Couldn't open chunk info file `$file' for reading");
-		return;
+		return false;
 	}
 
 	$chunks = array();
@@ -60,10 +60,10 @@ function agReadChunkInfo($file)
 function agParseDate($string)
 {
 	$date = new DateTime($string);
-	$w  = $date->format('W')+0; # week
-	$wy = $date->format('o')+0; # week-based year
-	$m  = $date->format('n')+0; # month
-	$my = $date->format('Y')+0; # calender year
+	$w  = intval($date->format('W')); # week
+	$wy = intval($date->format('o')); # week-based year
+	$m  = intval($date->format('n')); # month
+	$my = intval($date->format('Y')); # calender year
 	$q  = intval(($m-1)/3)+1;   # quarter
 	$ay = ( $m>=9 ? $my : $my-1 ); # start year of academic year (starts on sep 1st)
 	$a  = ($ay%100)*100 + ($ay%100)+1; # name of academic year (1314 etc)
@@ -79,6 +79,13 @@ function agParseDate($string)
 }
 
 // Return start and end datetime of given period
+/**
+ * @param $period_type
+ * @param $period
+ * @param $period_year
+ * @throws Exception
+ * @return DateTime[]
+ */
 function agPeriodInfo($period_type,$period,$period_year)
 {
 	global $LA;
@@ -116,6 +123,8 @@ function agPeriodInfo($period_type,$period,$period_year)
 			$pend = clone $pbegin;
 			$pend->add(new DateInterval('P1Y'));
 			break;
+		default:
+			throw new Exception("Unknown period type '{$period_type}'");
 	}
 	$pend->sub(new DateInterval('PT1S'));
 
@@ -168,7 +177,7 @@ function agHandlePeriod($day_id,$env,$period_type,$period,$period_year)
 	$result = mysql_query($q,$con);
 	if (!$result) {
 		catchMysqlError("agHandlePeriod 2", $con);
-		return;
+		return false;
 	}
 
 	# insert all unique users into the new table
@@ -181,7 +190,7 @@ function agHandlePeriod($day_id,$env,$period_type,$period,$period_year)
 	$result = mysql_query($q,$con);
 	if (!$result) {
 		catchMysqlError("agHandlePeriod 3", $con);
-		return;
+		return false;
 	}
 
 	mysql_query("COMMIT", $con);
@@ -204,7 +213,7 @@ function agPeriodTotals($periods)
 
 		print "period: $period ";
 
-		# fetch days belonging to the currect period
+		# fetch days belonging to the current period
 		$q = "
 			SELECT d.day_id,d.day_logins
 			FROM log_analyze_period as p
