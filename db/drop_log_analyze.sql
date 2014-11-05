@@ -1,7 +1,10 @@
 /* Drop procedures */
 drop procedure if exists getUniqueUserCount;
+drop procedure if exists getUniqueUserCountPerSP;
+drop procedure if exists getUniqueUserCountPerIdP;
 
 /* Always drop */
+DROP TABLE IF EXISTS log_analyze__meta;
 DROP TABLE IF EXISTS log_analyze_semaphore;
 DROP TABLE IF EXISTS log_analyze_chunk;
 
