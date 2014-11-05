@@ -421,14 +421,14 @@ function LaAnalyzeProviderUpdate($entry, $mysql_link) {
 
 			# insert additional metadata
 			foreach ($entry['idp_metadata'] as $key => $value) {
-				if ($value) {
-					$query = "UPDATE log_analyze_idp SET `idp_m_$key`='$value' WHERE `idp_id`={$idp_id}";
-				} else {
-					$query = "UPDATE log_analyze_idp SET `idp_m_$key`=NULL WHERE `idp_id`={$idp_id}";
-				}
-				mysql_query($query, $mysql_link);
-				if (mysql_affected_rows($mysql_link) != 1) {
-					catchMysqlError("LaAnalyzeProviderUpdate (IDP extra metadata)", $mysql_link);
+				if ($value)
+				{
+					$query = "UPDATE log_analyze_idp SET `idp_m_{$key}`='$value' WHERE `idp_id`={$idp_id}";
+					mysql_query($query, $mysql_link);
+					if (mysql_affected_rows($mysql_link) != 1)
+					{
+						catchMysqlError("LaAnalyzeProviderUpdate (IDP extra metadata): $query", $mysql_link);
+					}
 				}
 			}
 		}
