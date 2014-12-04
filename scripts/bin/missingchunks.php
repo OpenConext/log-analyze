@@ -300,7 +300,7 @@ if (isset($options['c']))
 	{
 		$t0 = format_date($s[0]);
 		$t1 = format_date($s[1]);
-		print "--from=\"$t0\" --to=\"$t1\"\n";
+		print "--from='$t0' --to='$t1'\n";
 	}
 	exit(0);
 }
