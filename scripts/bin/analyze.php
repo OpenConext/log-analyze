@@ -214,6 +214,12 @@ $total_numberOfChunks = $numberOfChunks;
 echo "Start processing ".$total_numberOfChunks." chunks with ".$LA['max_processes']." parallel processes.\n";
 log2file("Start processing ".$total_numberOfChunks." chunks with ".$LA['max_processes']." parallel processes.");
 
+if ($numberOfChunks==0)
+{
+	echo "Sorry, nothing to do\n";
+	exit(2);
+}
+
 # loop while there are still chunks left
 while ($numberOfChunks > 0) {
 	$numberOfChunks--;
