@@ -230,14 +230,12 @@ function agPeriodTotals($periods)
 		}
 
 		# total number of logins and users for this period
-		$selects = array();
 		$tot_logins = 0;
 		while ($row = mysql_fetch_assoc($result)) 
 		{
-			$selects[] = "SELECT DISTINCT user_name FROM log_analyze_days__{$row['day_id']}";
 			$tot_logins += $row['day_logins'];
 		}
-		$q = "SELECT COUNT(DISTINCT user_name) FROM ( " . implode(' UNION ', $selects) . ") foo";
+		$q = "SELECT COUNT(DISTINCT name) FROM log_analyze_periods__{$period}";
 		$result = mysql_query($q,$LA['mysql_link_stats']);
 		if (!$result) {
 			catchMysqlError("agPeriodTotals: query failed: {$q}", $LA['mysql_link_stats']);
