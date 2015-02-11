@@ -23,7 +23,7 @@ $ARGS = getopt('',array('from:','to:'));
 
 if (! array_key_exists("from", $ARGS) || ! array_key_exists("to", $ARGS)) {
 	echo "USAGE $argv[0] --from=\"YYYY-MM-DD HH:MM:SS\" --to=\"YYYY-MM-DD HH:MM:SS\" \n";
-	exit;
+	exit(1);
 }
 
 ############
@@ -47,7 +47,7 @@ $entry_to   = strtotime($ARGS['to']  );
 if ($entry_from===false || $entry_to===false ) {
 	echo "Arguments are not valid DATETIME. Format: YYYY-MM-DD HH:MM:SS\n";
 	print_r($ARGS);
-	exit;	
+	exit(1);	
 }
 $entry_from = timestamp2datestr($entry_from);
 $entry_to   = timestamp2datestr($entry_to  );
