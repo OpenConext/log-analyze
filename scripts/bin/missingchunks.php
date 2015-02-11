@@ -81,7 +81,7 @@ class TimeLine
 
 	function addSegment($date_from,$date_to,$status)
 	{
-		if ($date_to  <=$date_from              ) throw new Exception("Date `$date_to` out of range");
+		if ($date_to  < $date_from              ) throw new Exception("Date `$date_to` out of range");
 		if ($date_from< $this->firstNode->date()) throw new Exception("Date `$date_from` out of range");
 		if ($date_to  > $this->lastNode ->date()) throw new Exception("Date `$date_to` out of range");
 
@@ -271,9 +271,9 @@ while ($chunk = mysql_fetch_assoc($result))
 		print "Chunk out of range: $from < $start\n";
 		exit(1);
 	}
-	if ( $to <= $from )
+	if ( $to < $from )
 	{
-		print "invalid chunk $from to $start\n";
+		print "invalid chunk $from to $to\n";
 		exit(1);
 	}
 
