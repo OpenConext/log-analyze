@@ -238,14 +238,6 @@ if ( mysql_query("SET time_zone='+0:00';",$dbh) === false )
 }
 
 
-# keep track of states in a timeline
-# U = unprocessed
-# C = chunked but not analyzed
-# I = chunked and in progress
-# D = done
-# X = end
-$timeline = new Timeline($start,$stop,'U');
-
 # fetch the chunks
 $q = '
 	SELECT 
@@ -259,6 +251,7 @@ if ($result===false)
 	catchMysqlError("error while fetching chunks query was: $q", $dbh);
 	exit(4);
 }
+$segments = array();
 while ($chunk = mysql_fetch_assoc($result))
 {
 	# insert the chunk in the timeline
@@ -268,8 +261,22 @@ while ($chunk = mysql_fetch_assoc($result))
 
 	if ( $from < $start )
 	{
-		print "Chunk out of range: $from < $start\n";
-		exit(1);
+		# a chunk was found of which the data is not (or no longer) available 
+		# in the db
+		if ($status==='D')
+		{
+			# if the chunk is already done, this is not a problem (probably 
+			# just a data cleanup)
+			# reset the start to the beginning of this chunk
+			$start = $from;
+		} 
+		else
+		{
+			# chunk hasn't been processed yet, so this is a real problem.
+			# human intervention is advised
+			print "Chunk out of range (unixtime): $from < $start\n";
+			exit(1);
+		}
 	}
 	if ( $to < $from )
 	{
@@ -277,11 +284,25 @@ while ($chunk = mysql_fetch_assoc($result))
 		exit(1);
 	}
 
-	# find correct position in the timeline
-	$timeline->addSegment($from,$to,$status);
+	$segments[] = array( 'from' => $from, 'to' => $to, 'status' => $status );
+}
+closeMysqlDb($dbh);
+
+
+# keep track of states in a timeline
+# U = unprocessed
+# C = chunked but not analyzed
+# I = chunked and in progress
+# D = done
+# X = end
+# we now now that start and end, so create the total timeline
+$timeline = new Timeline($start,$stop,'U');
+foreach ($segments as $s)
+{
+	# insert segment into the timeline
+	$timeline->addSegment($s['from'],$s['to'],$s['status']);
 }
 
-closeMysqlDb($dbh);
 
 
 # interpret command line 
