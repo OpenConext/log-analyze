@@ -35,7 +35,7 @@ There are three scripts.
 1. First run the chunk.php script to create equal sized chunks of the logins table
 
 command:
-./chunk.php from="2013-11-26 00:00:00" to="2013-11-28 23:59:59"
+./chunk.php --from="2013-11-26 00:00:00" --to="2013-11-28 23:59:59"
 
 With this command all log entries from 2013-11-26 to 2013-11-28 will be processed
 
