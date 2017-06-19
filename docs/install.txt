@@ -3,9 +3,17 @@ This is the installation document of the log analyzer for OpenConext logins
 You already unpacked the tarball :-) 
 There are a couple of steps to take to get the database up and running.
 
+-----------------------------
+SETUP YOUR RAW LOGIN DATABASE
+-----------------------------
+
+Engineblock logs the logins to syslog using the identifier EBAUTH.
+You can use the db/create_log_analyze.sql to create a table for storing the logins. 
+A sample script to parse the EBAUTH logs is provided in engineblockauth_to_mysql.sh
+
 
 -------------------
-SETUP YOUR DATABASE
+SETUP YOUR LOG ANALYZE DATABASE
 -------------------
 Make sure you create a database with:
 - name: DB_NAME
