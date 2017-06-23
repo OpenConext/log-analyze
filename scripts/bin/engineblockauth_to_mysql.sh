@@ -6,7 +6,7 @@
 # Some variables
 UNPROCESSED_DIR="/var/log/openconext/log_logins/unprocessed/"
 WORK_DIR="/var/log/openconext/log_logins/work/"
-PROCESSED_DIR="/var/log/openconext/log_logins/work/processed"
+PROCESSED_DIR="/var/log/openconext/log_logins/work/processed/"
 DB_HOST="DB_HOST"
 DB_USER="DB_USER"
 DB_PASS="DB_PASSWORD"
