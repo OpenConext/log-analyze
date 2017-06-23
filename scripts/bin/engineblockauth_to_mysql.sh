@@ -4,7 +4,7 @@
 # The filename of the ebauth message should start with ebauth-
 #
 # Some variables
-UNPROCESSED_DIR="/var/log/openconextconext/log_logins/unprocessed/"
+UNPROCESSED_DIR="/var/log/openconext/log_logins/unprocessed/"
 WORK_DIR="/var/log/openconext/log_logins/work/"
 PROCESSED_DIR="/var/log/openconext/log_logins/work/processed"
 DB_HOST="DB_HOST"
