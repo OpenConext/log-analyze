@@ -198,9 +198,9 @@ echo "\n";
 
 # get entity metadata from SR
 echo "Fetching entity descriptions and metadata...";
-$LA['mysql_link_sr'] = openMysqlDb("DB_sr");
+$LA['mysql_link_manage'] = openMysqlDb("DB_manage");
 $entities = getAllEntities();
-closeMysqlDb($LA['mysql_link_sr']);
+closeMysqlDb($LA['mysql_link_manage']);
 echo "\n";
 
 # check for a max

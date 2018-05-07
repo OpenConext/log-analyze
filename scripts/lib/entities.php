@@ -69,26 +69,24 @@ function getAllEntities()
 	# this query returns all unique (entityid,eid,state,metadata) combinations from SR
 	# ordering is by eid and revision in order to see which entries are still active,
 	# and which are superseded
-	$query = "
-		SELECT
-			cr.eid,
-			cr.revisionid as rev,
-			cr.state,
-			cr.type,
-			cr.created,
-			{$meta_col}
-			cr.entityid
-		FROM janus__connectionRevision AS cr
-		{$meta_join}
-		ORDER BY cr.eid,rev
-	";
+        $query = "
+             SELECT
+                 eid,
+                 rev,
+                 state,
+                 CASE WHEN `type` like 'saml20_idp%' THEN 'saml20_idp' WHEN `type` like 'saml20_sp%' THEN 'saml20_sp' END as `type`,
+                 created,
+                 institutionid as m0,
+                 entityid
+              FROM manage_revisions order by eid,rev
+        ";
 
-	##print $query . "\n";
+	#print $query . "\n";
 
-	$result = mysql_query($query, $LA['mysql_link_sr']);
+	$result = mysql_query($query, $LA['mysql_link_manage']);
 	if ($result === false)
 	{
-		catchMysqlError("getAllEntities", $LA['mysql_link_sr']);
+		catchMysqlError("getAllEntities", $LA['mysql_link_manage']);
 	}
 	#$num = mysql_num_rows($result);
 

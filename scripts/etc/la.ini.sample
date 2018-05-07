@@ -74,15 +74,15 @@ $LA['DB_stats']['mysql_pass'] = "geheim";
 $LA['DB_stats']['mysql_db']   = "stats";
 
 # DB containing SR database (janus__* tables)
-$LA['DB_sr'] = array();
-$LA['DB_sr']['mysql_host'] = "127.0.0.1:1111";
-$LA['DB_sr']['mysql_user'] = "dikkiedik";
-$LA['DB_sr']['mysql_pass'] = "geheim";
-$LA['DB_sr']['mysql_db']   = "sr";
+$LA['DB_manage'] = array();
+$LA['DB_manage']['mysql_host'] = "127.0.0.1:1111";
+$LA['DB_manage']['mysql_user'] = "dikkiedik";
+$LA['DB_manage']['mysql_pass'] = "geheim";
+$LA['DB_manage']['mysql_db']   = "sr";
 
 $LA['mysql_link_logins'] = null;
 $LA['mysql_link_stats']  = null;
-$LA['mysql_link_sr']     = null;
+$LA['mysql_link_manage']     = null;
 
 # need these tables for input
 $LA['table_logins']   = "log_logins";
