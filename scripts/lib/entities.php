@@ -74,7 +74,7 @@ function getAllEntities()
                  eid,
                  rev,
                  state,
-                 CASE WHEN `type` like 'saml20_idp%' THEN 'saml20_idp' WHEN `type` like 'saml20_sp%' THEN 'saml20_sp' END as `type`,
+                 CASE WHEN `type` like 'saml20_idp%' THEN 'saml20-idp' WHEN `type` like 'saml20_sp%' THEN 'saml20-sp' END as `type`,
                  created,
                  institutionid as m0,
                  entityid
