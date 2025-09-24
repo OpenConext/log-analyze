@@ -1,3 +1,5 @@
+This repository is obsolete.  Its functionality has been replaced by https://github.com/OpenConext/OpenConext-statistics
+
 Welcome to the log analyzer of OpenConext logins.
 
 
